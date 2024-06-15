@@ -111,26 +111,35 @@ def escalonamento_prioridade(processos):
 
 def round_robin(processos, quantum):
     tempo_atual = 0
-    fila = []
-    processos.sort(key=lambda x: x.tempo_chegada)
-    for processo in processos:
-        fila.append(processo)
+    processos_concluidos = []
+    fila_pronta = []
 
-    while fila:
-        processo = fila.pop(0)
-        if processo.tempo_restante > quantum:
-            tempo_atual += quantum
-            processo.tempo_restante -= quantum
-            while fila and fila[0].tempo_chegada <= tempo_atual:
-                fila.append(fila.pop(0))
-            fila.append(processo)
+    while processos or fila_pronta:
+        while processos and processos[0].tempo_chegada <= tempo_atual:
+            fila_pronta.append(processos.pop(0))
+
+        if fila_pronta:
+            processo = fila_pronta.pop(0)
+            if processo.tempo_restante == processo.tempo_execucao:
+                processo.tempo_inicio = tempo_atual
+
+            if processo.tempo_restante > quantum:
+                processo.tempo_restante -= quantum
+                tempo_atual += quantum
+                while processos and processos[0].tempo_chegada <= tempo_atual:
+                    fila_pronta.append(processos.pop(0))
+                fila_pronta.append(processo)
+            else:
+                tempo_atual += processo.tempo_restante
+                processo.tempo_restante = 0
+                processo.tempo_conclusao = tempo_atual
+                processo.tempo_retorno = processo.tempo_conclusao - processo.tempo_chegada
+                processo.tempo_espera = processo.tempo_retorno - processo.tempo_execucao
+                processos_concluidos.append(processo)
         else:
-            tempo_atual += processo.tempo_restante
-            processo.tempo_restante = 0
-            processo.tempo_conclusao = tempo_atual
-            processo.tempo_retorno = processo.tempo_conclusao - processo.tempo_chegada
-            processo.tempo_espera = processo.tempo_retorno - processo.tempo_execucao
-    return processos
+            tempo_atual += 1
+
+    return processos_concluidos
 
 def obter_processos():
     n = int(input("Digite o número de processos: "))
